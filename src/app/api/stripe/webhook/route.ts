@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 import { prisma } from "@/lib/db";
 import { SubscriptionStatus } from "@/generated/prisma/client";
 import Stripe from "stripe";
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET || "");
+    event = getStripe().webhooks.constructEvent(payload, sig, process.env.STRIPE_WEBHOOK_SECRET || "");
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: "Firma inválida" }, { status: 400 });
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
 
       if (!userId) return NextResponse.json({ received: true });
 
-      const stripeSub = await stripe.subscriptions.retrieve(subscriptionId);
+      const stripeSub = await getStripe().subscriptions.retrieve(subscriptionId);
       const subscription = stripeSub as unknown as Stripe.Subscription & {
         current_period_start: number;
         current_period_end: number;

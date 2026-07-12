@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/db";
-import { stripe } from "@/lib/stripe";
+import { getStripe } from "@/lib/stripe";
 
 export async function POST() {
   const session = await auth();
@@ -17,7 +17,7 @@ export async function POST() {
   let customerId = user.subscription?.stripeCustomerId;
 
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: user.email,
       name: user.name || undefined,
     });
@@ -29,7 +29,7 @@ export async function POST() {
     return NextResponse.json({ error: "Stripe price no configurado" }, { status: 500 });
   }
 
-  const checkout = await stripe.checkout.sessions.create({
+  const checkout = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
     payment_method_types: ["card"],
